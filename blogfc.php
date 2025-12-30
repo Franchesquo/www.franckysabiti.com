@@ -1,10 +1,33 @@
+<?php
+require_once "forms/condb.php"; // connexion PDO dans $pdo
+
+$sql = "
+SELECT 
+    p.id,
+    p.titre,
+    p.contenu,
+    p.image,
+    p.date_publication,
+    a.nom AS auteur
+FROM posts p
+JOIN admins a ON p.admin_id = a.id
+WHERE p.statut = 'publie'
+ORDER BY p.date_publication DESC
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute();
+$posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>MENU PRINCIPAL</title>
+  <title>Blog FC</title>
   <meta name="description" content="">
   <meta name="keywords" content="">
 
@@ -40,25 +63,6 @@
 <body>
  <main class="main">
  
- <!-- SESSION ADMIN --> 
-    <?php
-session_start();
-
-// Sécurité : bloquer l’accès si non connecté
-if (!isset($_SESSION['admin_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-// Nombre total de catégories
-require_once "forms/condb.php";
-$totalPosts = $pdo->query("SELECT COUNT(*) FROM posts")->fetchColumn();
-$totalCategories = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
-
-
-?>
-
-
 
 <div class="page-title light-background">
   <div class="container">
@@ -70,24 +74,20 @@ $totalCategories = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn()
       <nav class="breadcrumbs">
         <ol class="mb-0">
           <li>
-            <a href="logout.php">
-              <i class="bi bi-box-arrow-right me-1"></i> Déconnecter
+            <a href="index.php">
+              <i class="bi bi-box-arrow-right me-1"></i> Acceuil
             </a>
           </li>
-          <li class="current">MENU PRINCIPAL</li>
+          <li class="current">Les dernières actualités</li>
         </ol>
       </nav>
 
-      <!-- Nom utilisateur à droite -->
-      <p class="ms-auto mb-0 fw-semibold">
-        <i class="bi bi-person-fill me-1"></i>
-        <?php echo htmlspecialchars($_SESSION['admin_nom']); ?>
-      </p>
+    
 
     </div>
 
     <!-- Titre -->
-    <h1 class="mt-3">MENU PRINCIPAL</h1>
+    <h1 class="mt-3">Les dernières actualités</h1>
 
 
   </div>
@@ -98,76 +98,106 @@ $totalCategories = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn()
 
     <div class="container">
 
+
+<div class="blog-grid">
+<?php foreach ($posts as $post): ?>
+<div
+    class="cards-container"
+    style="
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        width: 100%;
+        padding: 40px;
+        box-sizing: border-box;
+        align-items: stretch;
+    "
+>
         
 
-        <br>
+                <article
+    class="blog-card"
+    style="
+        background: linear-gradient(180deg, #1c1c1c, #151515);
+        border: 1px solid #2a2a2a;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 1000px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        color: #ffffff;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+    "
+>
 
+    <!-- CONTENEUR 2 COLONNES -->
+    <div
+        style="
+            display: grid;
+            grid-template-columns: 35% 65%;
+            min-height: 220px;
+        "
+    >
 
-    <div class="container my-5">
-  <div class="row g-4">
-
-    <!-- Gestion des articles -->
-    <div class="col-md-4">
-      <a href="articles.php" class="text-decoration-none">
-        <div class="card dashboard-card bg-success text-white text-center">
-          <div class="card-body">
-            <div class="icon-circle">
-              <i class="bi bi-file-earmark-text"></i>
-            </div>
-            <h5 class="mt-3">Gestion des articles</h5>
-          </div>
+        <!-- COLONNE IMAGE -->
+        <?php if (!empty($post['image']) && file_exists(__DIR__ . '/uploads/' . $post['image'])): ?>
+        <div style="width:100%; height:100%; overflow:hidden;">
+            <img
+                src="uploads/<?= htmlspecialchars($post['image']) ?>"
+                alt="<?= htmlspecialchars($post['titre']) ?>"
+                style="
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                "
+            >
         </div>
-      </a>
-    </div>
+        <?php endif; ?>
 
-    <!-- Gestion des commentaires -->
-    <div class="col-md-4">
-      <a href="commentaires.php" class="text-decoration-none">
-        <div class="card dashboard-card bg-warning text-white text-center">
-          <div class="card-body">
-            <div class="icon-circle">
-              <i class="bi bi-chat-dots"></i>
-            </div>
-            <h5 class="mt-3">Gestion des commentaires</h5>
-          </div>
+        <!-- COLONNE TEXTE -->
+        <div
+            class="blog-content"
+            style="
+                padding: 30px 22px;
+                text-align: left;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            "
+        >
+            <p class="blog-meta">
+                Le <?= date('d/m/Y', strtotime($post['date_publication'])) ?>  
+                — Par <?= htmlspecialchars($post['auteur']) ?>
+            </p>
+
+            <h3 class="blog-title">
+                <?= htmlspecialchars($post['titre']) ?>
+            </h3>
+
+            <p class="blog-excerpt">
+                <?= mb_substr(strip_tags($post['contenu']), 0, 150) ?>...
+            </p>
+
+            <a 
+                href="artpart.php?id=<?= $post['id'] ?>" 
+                class="btn-read"
+                style="align-self: flex-start;"
+            >
+                Lire la suite
+            </a>
         </div>
-      </a>
+
     </div>
+</article>
 
-    <!-- Nombre total de posts -->
-   <div class="col-md-4">
-  <div class="card dashboard-card bg-primary text-white text-center">
-    <div class="card-body">
-      <div class="icon-circle">
-        <i class="bi bi-tags"></i>
-      </div>
+ </div>
 
-      <h5 class="mt-3">Total des posts</h5>
-
-      <h2 class="fw-bold mt-2">
-        <?php echo $totalPosts; ?>
-      </h2>
-    </div>
-  </div>
+<?php endforeach; ?>
 </div>
 
 
-    <!-- Gestion des catégories -->
-    <div class="col-md-4">
-      <a href="add_category.php" class="text-decoration-none">
-        <div class="card dashboard-card bg-danger text-white text-center">
-          <div class="card-body">
-            <div class="icon-circle">
-              <i class="bi bi-tags"></i>
-            </div>
-            <h5 class="mt-3">Gestion des catégories</h5>
-          </div>
-        </div>
-      </a>
-    </div>
 
-  </div>
-</div>
 
     </div>
 

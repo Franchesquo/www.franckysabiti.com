@@ -71,7 +71,7 @@
       </nav>
 
 
-      <a class="btn-getstarted" href="#about">Blog</a>
+      <a class="btn-getstarted" href="blogfc.php">Blog</a>
 
 
     </div>

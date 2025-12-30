@@ -1,10 +1,46 @@
+<?php
+require_once 'forms/condb.php'; // ta connexion PDO
+
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+    die('Article invalide');
+}
+
+$id = (int) $_GET['id'];
+
+// Recuperer l'articles
+
+$sql = "
+SELECT 
+    p.titre,
+    p.contenu,
+    p.image,
+    p.date_publication,
+    a.nom AS auteur
+FROM posts p
+JOIN admins a ON p.admin_id = a.id
+WHERE p.id = :id AND p.statut = 'publie'
+LIMIT 1
+";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute(['id' => $id]);
+$post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$post) {
+    die('Article introuvable');
+}
+
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>MENU PRINCIPAL</title>
+  <title>Affichage</title>
   <meta name="description" content="">
   <meta name="keywords" content="">
 
@@ -40,25 +76,6 @@
 <body>
  <main class="main">
  
- <!-- SESSION ADMIN --> 
-    <?php
-session_start();
-
-// Sécurité : bloquer l’accès si non connecté
-if (!isset($_SESSION['admin_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
-// Nombre total de catégories
-require_once "forms/condb.php";
-$totalPosts = $pdo->query("SELECT COUNT(*) FROM posts")->fetchColumn();
-$totalCategories = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
-
-
-?>
-
-
 
 <div class="page-title light-background">
   <div class="container">
@@ -70,24 +87,20 @@ $totalCategories = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn()
       <nav class="breadcrumbs">
         <ol class="mb-0">
           <li>
-            <a href="logout.php">
-              <i class="bi bi-box-arrow-right me-1"></i> Déconnecter
+            <a href="blogfc.php">
+             Blog
             </a>
           </li>
-          <li class="current">MENU PRINCIPAL</li>
+          <li class="current">Les dernières actualités</li>
         </ol>
       </nav>
 
-      <!-- Nom utilisateur à droite -->
-      <p class="ms-auto mb-0 fw-semibold">
-        <i class="bi bi-person-fill me-1"></i>
-        <?php echo htmlspecialchars($_SESSION['admin_nom']); ?>
-      </p>
+    
 
     </div>
 
     <!-- Titre -->
-    <h1 class="mt-3">MENU PRINCIPAL</h1>
+    <h1 class="mt-3">Les dernières actualités</h1>
 
 
   </div>
@@ -95,82 +108,61 @@ $totalCategories = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn()
 
 
    <main class="main">
-
     <div class="container">
-
-        
-
         <br>
-
-
-    <div class="container my-5">
-  <div class="row g-4">
-
-    <!-- Gestion des articles -->
-    <div class="col-md-4">
-      <a href="articles.php" class="text-decoration-none">
-        <div class="card dashboard-card bg-success text-white text-center">
-          <div class="card-body">
-            <div class="icon-circle">
-              <i class="bi bi-file-earmark-text"></i>
+<!------------------------Image de couverture------------ -->
+    <?php if (!empty($post['image']) && file_exists(__DIR__ . '/uploads/' . $post['image'])): ?>
+        <div style="
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border-radius: 20px;
+            margin-bottom: 30px;
+        ">
+    <img
+        src="uploads/<?= htmlspecialchars($post['image']) ?>"
+        alt="<?= htmlspecialchars($post['titre']) ?>"
+        style="
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+                    "
+                >
             </div>
-            <h5 class="mt-3">Gestion des articles</h5>
-          </div>
-        </div>
-      </a>
-    </div>
+            <?php endif; ?>
 
-    <!-- Gestion des commentaires -->
-    <div class="col-md-4">
-      <a href="commentaires.php" class="text-decoration-none">
-        <div class="card dashboard-card bg-warning text-white text-center">
-          <div class="card-body">
-            <div class="icon-circle">
-              <i class="bi bi-chat-dots"></i>
+ <!--------------------- Contenu  de l'articles----------->
+            <div style="
+                max-width: 100%;
+                margin: 0 auto;
+                padding: 20px;
+                color: #ffffff;
+            ">
+                            <p style="color:#bdbdbd;">
+                    Le <?= date('d/m/Y', strtotime($post['date_publication'])) ?>
+                    — Par <?= htmlspecialchars($post['auteur']) ?>
+                </p>
+
+                <h1 style="
+                    margin: 20px 0;
+                    font-size: 36px;
+                ">
+                    <?= htmlspecialchars($post['titre']) ?>
+                </h1>
+
+                <div style="
+                    line-height: 1.8;
+                    font-size: 18px;
+                    color: #e0e0e0;
+                ">
+                    <?= nl2br(htmlspecialchars($post['contenu'])) ?>
+                </div>
             </div>
-            <h5 class="mt-3">Gestion des commentaires</h5>
-          </div>
-        </div>
-      </a>
-    </div>
 
-    <!-- Nombre total de posts -->
-   <div class="col-md-4">
-  <div class="card dashboard-card bg-primary text-white text-center">
-    <div class="card-body">
-      <div class="icon-circle">
-        <i class="bi bi-tags"></i>
-      </div>
 
-      <h5 class="mt-3">Total des posts</h5>
-
-      <h2 class="fw-bold mt-2">
-        <?php echo $totalPosts; ?>
-      </h2>
-    </div>
-  </div>
 </div>
-
-
-    <!-- Gestion des catégories -->
-    <div class="col-md-4">
-      <a href="add_category.php" class="text-decoration-none">
-        <div class="card dashboard-card bg-danger text-white text-center">
-          <div class="card-body">
-            <div class="icon-circle">
-              <i class="bi bi-tags"></i>
-            </div>
-            <h5 class="mt-3">Gestion des catégories</h5>
-          </div>
-        </div>
-      </a>
-    </div>
-
-  </div>
-</div>
-
-    </div>
-
+   
     <br>
 
  <?php include("pied.php"); ?>
