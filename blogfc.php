@@ -1,6 +1,31 @@
 <?php
 require_once "forms/condb.php"; // connexion PDO dans $pdo
 
+// Nombre d’articles par page
+$articlesParPage = 5;
+
+// Page courante
+$page = isset($_GET['page']) && is_numeric($_GET['page'])
+    ? (int) $_GET['page']
+    : 1;
+
+if ($page < 1) {
+    $page = 1;
+}
+
+// Calcul OFFSET
+$offset = ($page - 1) * $articlesParPage;
+
+// Nombre total d’articles publiés
+$sqlCount = "
+    SELECT COUNT(*)
+    FROM posts
+    WHERE statut = 'publie'
+";
+$totalArticles = $pdo->query($sqlCount)->fetchColumn();
+$totalPages = ceil($totalArticles / $articlesParPage);
+
+// Récupération des articles de la page courante
 $sql = "
 SELECT 
     p.id,
@@ -8,18 +33,25 @@ SELECT
     p.contenu,
     p.image,
     p.date_publication,
-    a.nom AS auteur
+    a.nom AS auteur,
+    c.nom AS categorie
 FROM posts p
-JOIN admins a ON p.admin_id = a.id
+JOIN admins a 
+    ON p.admin_id = a.id
+JOIN categories c 
+    ON p.categorie_id = c.id
 WHERE p.statut = 'publie'
 ORDER BY p.date_publication DESC
+LIMIT :limit OFFSET :offset
 ";
 
 $stmt = $pdo->prepare($sql);
+$stmt->bindValue(':limit', $articlesParPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
+
 $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -75,7 +107,7 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <ol class="mb-0">
           <li>
             <a href="index.php">
-              <i class="bi bi-box-arrow-right me-1"></i> Acceuil
+              <i class="bi bi-box-arrow-right me-1"></i> Retournez sur le site
             </a>
           </li>
           <li class="current">Les dernières actualités</li>
@@ -155,53 +187,121 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
         <?php endif; ?>
 
-        <!-- COLONNE TEXTE -->
-        <div
-            class="blog-content"
-            style="
-                padding: 30px 22px;
-                text-align: left;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            "
-        >
-            <p class="blog-meta">
-                Le <?= date('d/m/Y', strtotime($post['date_publication'])) ?>  
-                — Par <?= htmlspecialchars($post['auteur']) ?>
-            </p>
+       <!-- COLONNE TEXTE -->
+<div
+    class="blog-content"
+    style="
+        padding: 30px 22px;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    "
+>
 
-            <h3 class="blog-title">
-                <?= htmlspecialchars($post['titre']) ?>
-            </h3>
+    <!-- CATÉGORIE -->
+    <p
+        style="
+            font-size: 14px;
+            color: #bdbdbd;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        "
+    >
+        📁 Dans
+               <span style="text-decoration: underline; font-size: 16px;">
+                 <?= htmlspecialchars($post['categorie']) ?>
+            </span>
+    </p>
 
-            <p class="blog-excerpt">
-                <?= mb_substr(strip_tags($post['contenu']), 0, 150) ?>...
-            </p>
+    <!-- MÉTA -->
+    <p class="blog-meta">
+        Le <?= date('d/m/Y', strtotime($post['date_publication'])) ?>  
+        — Par <?= htmlspecialchars($post['auteur']) ?>
+    </p>
 
-            <a 
-                href="artpart.php?id=<?= $post['id'] ?>" 
-                class="btn-read"
-                style="align-self: flex-start;"
-            >
-                Lire la suite
-            </a>
-        </div>
+    <!-- TITRE -->
+    <h3 class="blog-title">
+        <?= htmlspecialchars($post['titre']) ?>
+    </h3>
+
+    <!-- EXTRAIT -->
+    <p class="blog-excerpt">
+        <?= mb_substr(strip_tags($post['contenu']), 0, 150) ?>...
+    </p>
+
+    <!-- BOUTON -->
+    <a 
+        href="artpart.php?id=<?= $post['id'] ?>" 
+        class="btn-read"
+        style="align-self: flex-start;"
+    >
+        Lire la suite
+    </a>
+
+</div>
+
 
     </div>
-</article>
+
+    </article>
+
+
 
  </div>
+
+
+
 
 <?php endforeach; ?>
 </div>
 
 
+ <?php if ($totalPages > 1): ?>
+<div style="
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 40px 0;
+">
 
+    <!-- Bouton précédent -->
+    <?php if ($page > 1): ?>
+        <a href="?page=<?= $page - 1 ?>"
+           style="padding:8px 14px; border:1px solid #ccc; text-decoration:none;">
+            ← Précédent
+        </a>
+    <?php endif; ?>
 
+    <!-- Numéros de pages -->
+    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+        <a
+            href="?page=<?= $i ?>"
+            style="
+                padding:8px 14px;
+                text-decoration:none;
+                border:1px solid #ccc;
+                <?= $i === $page ? 'background:#333;color:#fff;' : '' ?>
+            "
+        >
+            <?= $i ?>
+        </a>
+    <?php endfor; ?>
+
+    <!-- Bouton suivant -->
+    <?php if ($page < $totalPages): ?>
+        <a href="?page=<?= $page + 1 ?>"
+           style="padding:8px 14px; border:1px solid #ccc; text-decoration:none;">
+            Suivant →
+        </a>
+    <?php endif; ?>
+
+</div>
+<?php endif; ?>
     </div>
 
-    <br>
 
  <?php include("pied.php"); ?>
  </main>

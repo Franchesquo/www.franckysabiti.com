@@ -1,24 +1,64 @@
 <?php
-require_once 'forms/condb.php'; // ta connexion PDO
+require_once 'forms/condb.php'; // connexion PDO
 
+/* =========================
+   1. VALIDATION DE L’ID
+========================= */
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die('Article invalide');
 }
 
 $id = (int) $_GET['id'];
 
-// Recuperer l'articles
+/* =========================
+   2. TRAITEMENT DU COMMENTAIRE
+========================= */
+if (isset($_POST['submit_comment'])) {
 
+    $nom = trim($_POST['nom']);
+    $email = trim($_POST['email']);
+    $commentaire = trim($_POST['commentaire']);
+    $post_id = (int) $_POST['post_id'];
+
+    if ($nom && $email && $commentaire) {
+
+        $sqlInsert = "
+        INSERT INTO commentaires 
+            (post_id, nom, email, commentaire, date_commentaire, statut)
+        VALUES 
+            (:post_id, :nom, :email, :commentaire, NOW(), 'en_attente')
+        ";
+
+        $stmtInsert = $pdo->prepare($sqlInsert);
+        $stmtInsert->execute([
+            'post_id' => $post_id,
+            'nom' => $nom,
+            'email' => $email,
+            'commentaire' => $commentaire
+        ]);
+
+        $message_commentaire = "Merci ! Votre commentaire est en attente de validation.";
+    }
+}
+
+/* =========================
+   3. RÉCUPÉRER L’ARTICLE
+========================= */
 $sql = "
 SELECT 
     p.titre,
     p.contenu,
     p.image,
     p.date_publication,
-    a.nom AS auteur
+    a.nom AS auteur,
+    c.nom AS categorie
 FROM posts p
-JOIN admins a ON p.admin_id = a.id
-WHERE p.id = :id AND p.statut = 'publie'
+JOIN admins a 
+    ON p.admin_id = a.id
+JOIN categories c 
+    ON p.categorie_id = c.id
+WHERE p.id = :id 
+  AND p.statut = 'publie'
 LIMIT 1
 ";
 
@@ -29,6 +69,60 @@ $post = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$post) {
     die('Article introuvable');
 }
+
+/* =========================
+   4. RÉCUPÉRER LES COMMENTAIRES APPROUVÉS
+========================= */
+$sqlComments = "
+SELECT 
+    nom,
+    commentaire,
+    date_commentaire
+FROM commentaires
+WHERE post_id = :post_id
+  AND statut = 'approuve'
+ORDER BY date_commentaire ASC
+";
+
+$stmtComments = $pdo->prepare($sqlComments);
+$stmtComments->execute(['post_id' => $id]);
+$commentaires = $stmtComments->fetchAll(PDO::FETCH_ASSOC);
+
+/* =========================
+   4. TRAITEMENT PHP DU COMMENTAIRE (INSERTION)
+========================= */
+
+if (isset($_POST['submit_comment'])) {
+
+    $nom = trim($_POST['nom']);
+    $email = trim($_POST['email']);
+    $commentaire = trim($_POST['commentaire']);
+    $post_id = (int) $_POST['post_id'];
+
+    if ($nom && $email && $commentaire) {
+
+        $sqlInsert = "
+        INSERT INTO commentaires 
+            (post_id, nom, email, commentaire, date_commentaire, statut)
+        VALUES 
+            (:post_id, :nom, :email, :commentaire, NOW(), 'en_attente')
+        ";
+
+        $stmtInsert = $pdo->prepare($sqlInsert);
+        $stmtInsert->execute([
+            'post_id' => $post_id,
+            'nom' => $nom,
+            'email' => $email,
+            'commentaire' => $commentaire
+        ]);
+
+        // REDIRECTION POUR ÉVITER LES DOUBLONS
+        header("Location: artpart.php?id=" . $post_id . "&comment=success");
+        exit;
+    }
+}
+
+
 
 
 ?>
@@ -43,6 +137,19 @@ if (!$post) {
   <title>Affichage</title>
   <meta name="description" content="">
   <meta name="keywords" content="">
+
+  <!-- Open Graph pour WhatsApp / Facebook -->
+<meta property="og:title" content="<?= htmlspecialchars($post['titre']) ?>">
+<meta property="og:description" content="<?= mb_substr(strip_tags($post['contenu']), 0, 150) ?>">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.franckysabiti.com/artpart.php?id=<?= $id ?>">
+
+<meta property="og:image" content="https://www.franckysabiti.com/uploads/<?= $post['image'] ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<meta property="og:site_name" content="Francky Sabiti Blog">
+
 
   <!-- Favicons -->
   <link href="assets/img/favicon11.png" rel="icon">
@@ -91,7 +198,7 @@ if (!$post) {
              Blog
             </a>
           </li>
-          <li class="current">Les dernières actualités</li>
+          <li class="current"> <?= htmlspecialchars($post['categorie']) ?></li>
         </ol>
       </nav>
 
@@ -100,7 +207,7 @@ if (!$post) {
     </div>
 
     <!-- Titre -->
-    <h1 class="mt-3">Les dernières actualités</h1>
+    <h1 class="mt-3"> <?= htmlspecialchars($post['titre']) ?></h1>
 
 
   </div>
@@ -159,6 +266,60 @@ if (!$post) {
                     <?= nl2br(htmlspecialchars($post['contenu'])) ?>
                 </div>
             </div>
+
+
+<br><br><br>
+
+            <h3>Commentaires</h3>
+
+<?php if (count($commentaires) === 0): ?>
+    <p>Aucun commentaire pour le moment.</p>
+<?php else: ?>
+    <?php foreach ($commentaires as $com): ?>
+        <div style="margin-bottom:20px; padding-bottom:10px; border-bottom:1px solid #333;">
+            <strong><?= htmlspecialchars($com['nom']) ?></strong>
+            <small style="color:#aaa;">
+                — <?= date('d/m/Y H:i', strtotime($com['date_commentaire'])) ?>
+            </small>
+
+            <p><?= nl2br(htmlspecialchars($com['commentaire'])) ?></p>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+
+<?php if (isset($_GET['comment']) && $_GET['comment'] === 'success'): ?>
+    <p style="color: green;">
+        Merci ! Votre commentaire est en attente de validation.
+    </p>
+<?php endif; ?>
+
+
+<h3>Laisser un commentaire</h3>
+
+<form method="post">
+    <input type="hidden" name="post_id" value="<?= $id ?>">
+
+    <div>
+        <label>Nom</label><br>
+        <input type="text" name="nom" required>
+    </div>
+
+    <div>
+        <label>Email</label><br>
+        <input type="email" name="email" required>
+    </div>
+
+    <div>
+        <label>Commentaire</label><br>
+        <textarea name="commentaire" rows="5" required></textarea>
+    </div>
+
+    <button type="submit" name="submit_comment">
+        Envoyer
+    </button>
+</form>
+
 
 
 </div>

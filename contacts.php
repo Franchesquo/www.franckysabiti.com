@@ -62,11 +62,12 @@
             </ul>
           </li>
           <li><a href="contacts.php"class="active">Contact</a></li>
+          <li><a href="login.php"><i class="bi bi-person-lock me-2"></i></a></li>
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
 
-      <a class="btn-getstarted" href="#about">Blog</a>
+      <a class="btn-getstarted" href="blogfc.php">Blog</a>
 
     </div>
   </header>
