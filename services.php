@@ -10,7 +10,6 @@
 
   <!-- Favicons -->
   <link href="assets/img/favicon11.png" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -212,7 +211,7 @@
                   <p>Collaborez avec nous pour donner vie à vos idées grâce à des solutions innovantes et personnalisées.</p>
                 </div>
                 <div class="col-lg-4 text-lg-end text-center">
-                  <a href="contacts.php" class="cta-btn">Démarrez votre projet</a>
+                  <a href="dempro.php" class="cta-btn">Démarrez votre projet</a>
                 </div>
               </div>
             </div>
@@ -237,7 +236,7 @@
 
   <!-- Vendor JS Files -->
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <!--<script src="assets/vendor/php-email-form/validate.js"></script>-->
   <script src="assets/vendor/aos/aos.js"></script>
   <script src="assets/vendor/typed.js/typed.umd.js"></script>
   <script src="assets/vendor/waypoints/noframework.waypoints.js"></script>

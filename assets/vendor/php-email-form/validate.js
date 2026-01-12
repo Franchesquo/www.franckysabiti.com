@@ -55,25 +55,25 @@
       body: formData,
       headers: {'X-Requested-With': 'XMLHttpRequest'}
     })
-    .then(response => {
-      if( response.ok ) {
-        return response.text();
-      } else {
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`); 
-      }
-    })
     .then(data => {
-      thisForm.querySelector('.loading').classList.remove('d-block');
-      if (data.trim() == 'OK') {
-        thisForm.querySelector('.sent-message').classList.add('d-block');
-        thisForm.reset(); 
-      } else {
-        throw new Error(data ? data : 'Form submission failed and no error message returned from: ' + action); 
-      }
-    })
-    .catch((error) => {
-      displayError(thisForm, error);
-    });
+  thisForm.querySelector('.loading').classList.remove('d-block');
+
+  const cleanData = data.trim(); // 🔥 IMPORTANT
+
+  // 👉 Succès WhatsApp
+  if (cleanData.startsWith('https://wa.me/')) {
+    window.location.href = cleanData;
+    return;
+  }
+
+  // 👉 Erreur réelle
+  throw new Error(cleanData || 'Erreur lors de l’envoi du formulaire');
+})
+
+.catch((error) => {
+  displayError(thisForm, error);
+});
+
   }
 
   function displayError(thisForm, error) {

@@ -41,7 +41,6 @@ if (isset($_POST['login'])) {
 
   <!-- Favicons -->
   <link href="assets/img/favicon11.png" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
 
@@ -80,7 +79,7 @@ if (isset($_POST['login'])) {
             <li class="current">Connexion administrateurs</li>
           </ol>
         </nav>
-        <h1>Cette section est reservée juste aux administrateur du site</h1>
+        <h1>Cette section est reservée juste aux administrateurs du site</h1>
       </div>
     </div><!-- End Page Title -->
 

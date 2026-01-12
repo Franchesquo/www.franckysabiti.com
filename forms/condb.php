@@ -1,8 +1,8 @@
 <?php
-$host = "localhost:3306";
-$dbname = "franckys_contactdb";
-$user = "franckys_contactuser";
-$pass = "0994699173Francky";
+$host = "localhost";
+$dbname = "contactdb";
+$user = "root";
+$pass = "";
 
 try {
     $pdo = new PDO(

@@ -10,7 +10,6 @@
 
   <!-- Favicons -->
   <link href="assets/img/favicon11.png" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -128,9 +127,22 @@
                     </li>
                   </ul>
                   <div class="cta-buttons">
-                    <a href="#" class="btn-primary">Démarrer le projet</a>
-                    <a href="#" class="btn-secondary">Planifier un appel</a>
-                  </div>
+                  
+                  <!-- Planifier un appel WhatsApp -->
+                  <a 
+                      href="https://wa.me/243850754604?text=Bonjour%20Francky,%0AJe%20souhaite%20planifier%20un%20appel%20WhatsApp.%0A%0ADate:%20____%0AHeure:%20____%0AObjet:%20____"
+                      target="_blank"
+                      class="btn-secondary"
+                  >
+                      Planifier un appel
+                  </a>
+
+                  <!-- Démarrer le projet (à configurer ensuite) -->
+                  <a href="dempro.php" class="btn-primary">
+                      Démarrer le projet
+                  </a>
+
+              </div>
                 </div>
               </div>
 
